@@ -119,26 +119,32 @@ const YouTubeLoopPlayer: React.FC<YouTubeLoopPlayerProps> = ({ videoId, startTim
           const currentTime = curPlayerValue.getCurrentTime();
 
           // Seamless crossfade switch at 450ms prior to official end point
-          if (currentTime >= endTime - 0.45 || currentTime < startTime - 1) {
+          if (currentTime >= endTime - 0.85 || currentTime < startTime - 1) {
             if (nextPlayerValue && typeof nextPlayerValue.playVideo === 'function') {
+              lastSwitchTime = now; // lock immediately so the interval doesn't re-fire
+
+              // start it while still hidden (opacity 0) — icon flashes off-screen
               nextPlayerValue.playVideo();
 
-              const nextActive = currentActive === 'A' ? 'B' : 'A';
-              activePlayerRef.current = nextActive;
-              setActivePlayer(nextActive);
-              lastSwitchTime = now;
-
-              // Smoothly transition old running player out then reset it to standby format
               setTimeout(() => {
                 if (isDestroyed) return;
-                try {
-                  if (curPlayerValue && typeof curPlayerValue.seekTo === 'function') {
-                    curPlayerValue.pauseVideo();
-                    curPlayerValue.seekTo(startTime, true);
+
+                // now reveal it — by this point YouTube's feedback icon has faded out
+                const nextActive = currentActive === 'A' ? 'B' : 'A';
+                activePlayerRef.current = nextActive;
+                setActivePlayer(nextActive);
+
+                setTimeout(() => {
+                  if (isDestroyed) return;
+                  try {
+                    if (curPlayerValue && typeof curPlayerValue.seekTo === 'function') {
+                      curPlayerValue.pauseVideo();
+                      curPlayerValue.seekTo(startTime, true);
+                    }
+                  } catch (e) {
+                    console.error(e);
                   }
-                } catch (e) {
-                  console.error(e);
-                }
+                }, 400);
               }, 400);
             }
           }
