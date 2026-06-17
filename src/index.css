@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-condensed: "Bebas Neue", sans-serif;
+  --font-serif: "Playfair Display", serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-gold: #C5A059;
+  --color-sophisticated-bg: #0A0A0B;
+  --color-sophisticated-card: #0F0F11;
+  --color-sophisticated-text: #E0E0E0;
+  
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-spin-slow: spin 20s linear infinite;
+}
+
+@layer utilities {
+  /* Thin custom scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(197, 160, 89, 0.15);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(197, 160, 89, 0.35);
+  }
+}
+
+/* Base style resets with Sophisticated Dark */
+body {
+  font-family: var(--font-sans);
+  background-color: #0A0A0B;
+  color: #E0E0E0;
+  overflow-x: hidden;
+}
+
+/* Mechanical Keyboard Key animations */
+@keyframes key-press {
+  0% { transform: translateY(0); box-shadow: 0 4px 0 rgba(0,0,0,0.4); }
+  50% { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.4); }
+  100% { transform: translateY(0); box-shadow: 0 4px 0 rgba(0,0,0,0.4); }
+}
+
+.key-active {
+  animation: key-press 0.1s ease-out;
+  background-color: #ef4444 !important;
+  color: white !important;
+}
+
+/* Text typewriter blink cursor */
+.cursor-blink::after {
+  content: '|';
+  animation: cursor-blink-anim 1s infinite;
+}
+
+@keyframes cursor-blink-anim {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}

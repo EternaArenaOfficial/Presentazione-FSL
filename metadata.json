@@ -1,0 +1,6 @@
+{
+  "name": "Presentazione PCTO UNIBZ",
+  "description": "Una presentazione editoriale altamente interattiva e curata che esplora l'esperienza di PCTO dello studente presso la Libera Università di Bolzano (UNIBZ) lavorando con realtà mista, visori HoloLens e Meta Aria.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
