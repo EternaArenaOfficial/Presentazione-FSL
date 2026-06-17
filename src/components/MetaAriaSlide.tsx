@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Compass, LayoutGrid, Sliders, Info, Eye } from 'lucide-react';
 import { motion } from 'motion/react';
+import pointcloudImg from '../assets/images/real_pointcloud_scan_1781608070339.jpg';
 
 interface Point3D {
   x: number;
@@ -573,7 +574,7 @@ export const MetaAriaSlide: React.FC = () => {
             ) : (
               <div className="absolute inset-0 bg-zinc-950 flex items-center justify-center overflow-hidden">
                 <img 
-                  src="/src/assets/images/real_pointcloud_scan_1781608070339.jpg" 
+                  src={pointcloudImg} 
                   alt="Real Point Cloud Scan" 
                   className="w-full h-full object-cover opacity-90 transition-all duration-700 hover:scale-105"
                   referrerPolicy="no-referrer"

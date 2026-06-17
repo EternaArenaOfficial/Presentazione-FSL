@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Network, LayoutList, FileSpreadsheet, Eye, RefreshCw, Layers, CheckSquare, AlertTriangle, Download, ArrowUpRight, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import hololensImg from '../assets/images/real_hololens_overlay_1781608991166.jpg';
 
 interface YouTubeLoopPlayerProps {
   videoId: string;
@@ -876,7 +877,7 @@ export const HoloLensSlide: React.FC = () => {
             {activeStep === 2 && (
               <div className="absolute inset-0 bg-zinc-950 flex items-center justify-center overflow-hidden animate-fade-in">
                 <img 
-                  src="/src/assets/images/real_hololens_overlay_1781608991166.jpg" 
+                  src={hololensImg} 
                   alt="Real HoloLens 2 Scan at Caldaro" 
                   className="w-full h-full object-cover opacity-90 transition-all duration-700 hover:scale-105"
                   style={{ filter: 'url(#holographic-filter)' }}
