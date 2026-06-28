@@ -1,223 +1,88 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Network, LayoutList, FileSpreadsheet, Eye, RefreshCw, Layers, CheckSquare, AlertTriangle, Download, ArrowUpRight, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import hololensImg from '../assets/images/real_hololens_overlay_1781608991166.jpg';
+import hololensVideo from '../assets/videos/Hololens.mp4';
 
-interface YouTubeLoopPlayerProps {
-  videoId: string;
+interface LoopingVideoPlayerProps {
+  src: string;
   startTime: number;
   endTime: number;
 }
 
-const YouTubeLoopPlayer: React.FC<YouTubeLoopPlayerProps> = ({ videoId, startTime, endTime }) => {
-  const containerRefA = useRef<HTMLDivElement | null>(null);
-  const containerRefB = useRef<HTMLDivElement | null>(null);
-  const playerRefA = useRef<any>(null);
-  const playerRefB = useRef<any>(null);
-  const intervalRef = useRef<number | null>(null);
-  const [activePlayer, setActivePlayer] = useState<'A' | 'B'>('A');
+const LoopingVideoPlayer: React.FC<LoopingVideoPlayerProps> = ({ src, startTime, endTime }) => {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isPaused, setIsPaused] = useState<boolean>(false);
 
-  const activePlayerRef = useRef<'A' | 'B'>('A');
-  const isPausedRef = useRef<boolean>(false);
-
   useEffect(() => {
-    if (!(window as any).YT) {
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-    }
+    const video = videoRef.current;
+    if (!video) return;
 
-    let isDestroyed = false;
-
-    const createPlayer = (elementId: string, onPlayerReady: (p: any) => void) => {
-      return new (window as any).YT.Player(elementId, {
-        videoId: videoId,
-        width: '100%',
-        height: '100%',
-        playerVars: {
-          autoplay: elementId.includes('a') ? 1 : 0,
-          mute: 1,
-          controls: 0,
-          modestbranding: 1,
-          rel: 0,
-          start: startTime,
-          end: endTime,
-          showinfo: 0,
-          iv_load_policy: 3,
-          disablekb: 1,
-          fs: 0,
-        },
-        events: {
-          onReady: (event: any) => {
-            if (isDestroyed) return;
-            event.target.mute();
-            onPlayerReady(event.target);
-          }
-        }
-      });
-    };
-
-    const initPlayers = () => {
-      if (isDestroyed) return;
-
-      if (containerRefA.current) {
-        containerRefA.current.innerHTML = '<div id="yt-player-a" class="w-full h-full"></div>';
+    const handleLoadedMetadata = () => {
+      try {
+        video.currentTime = startTime;
+      } catch (e) {
+        console.error(e);
       }
-      if (containerRefB.current) {
-        containerRefB.current.innerHTML = '<div id="yt-player-b" class="w-full h-full"></div>';
+      video.play().catch(() => {
+        // Autoplay can be blocked in some contexts; ignore silently.
+      });
+    };
+
+    const handleTimeUpdate = () => {
+      if (video.currentTime >= endTime || video.currentTime < startTime - 0.5) {
+        try {
+          video.currentTime = startTime;
+        } catch (e) {
+          console.error(e);
+        }
       }
-
-      playerRefA.current = createPlayer('yt-player-a', (p) => {
-        if (!isPausedRef.current) {
-          p.playVideo();
-        } else {
-          p.pauseVideo();
-        }
-        startLoopMonitor();
-      });
-
-      playerRefB.current = createPlayer('yt-player-b', (p) => {
-        p.pauseVideo();
-        p.seekTo(startTime, true);
-      });
     };
 
-    let lastSwitchTime = 0;
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('timeupdate', handleTimeUpdate);
 
-    const startLoopMonitor = () => {
-      if (isDestroyed) return;
-      if (intervalRef.current) return;
-
-      intervalRef.current = window.setInterval(() => {
-        if (isPausedRef.current) return;
-
-        const now = Date.now();
-        if (now - lastSwitchTime < 2500) return;
-
-        const currentActive = activePlayerRef.current;
-        const curPlayerValue = currentActive === 'A' ? playerRefA.current : playerRefB.current;
-        const nextPlayerValue = currentActive === 'A' ? playerRefB.current : playerRefA.current;
-
-        if (curPlayerValue && typeof curPlayerValue.getCurrentTime === 'function') {
-          const currentTime = curPlayerValue.getCurrentTime();
-
-          if (currentTime >= endTime - 0.85 || currentTime < startTime - 1) {
-            if (nextPlayerValue && typeof nextPlayerValue.playVideo === 'function') {
-              lastSwitchTime = now; // lock immediately so the interval doesn't re-fire
-
-              // start it while still hidden (opacity 0) — icon flashes off-screen
-              nextPlayerValue.playVideo();
-
-              setTimeout(() => {
-                if (isDestroyed) return;
-
-                // now reveal it — by this point YouTube's feedback icon has faded out
-                const nextActive = currentActive === 'A' ? 'B' : 'A';
-                activePlayerRef.current = nextActive;
-                setActivePlayer(nextActive);
-
-                setTimeout(() => {
-                  if (isDestroyed) return;
-                  try {
-                    if (curPlayerValue && typeof curPlayerValue.seekTo === 'function') {
-                      curPlayerValue.pauseVideo();
-                      curPlayerValue.seekTo(startTime, true);
-                    }
-                  } catch (e) {
-                    console.error(e);
-                  }
-                }, 400);
-              }, 400);
-            }
-          }
-        }
-      }, 50);
-    };
-
-    if ((window as any).YT && (window as any).YT.Player) {
-      initPlayers();
-    } else {
-      const existingCallback = (window as any).onYouTubeIframeAPIReady;
-      (window as any).onYouTubeIframeAPIReady = () => {
-        if (existingCallback) existingCallback();
-        initPlayers();
-      };
+    // If metadata is already loaded (e.g. fast cache hit), kick things off immediately.
+    if (video.readyState >= 1) {
+      handleLoadedMetadata();
     }
 
     return () => {
-      isDestroyed = true;
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      try {
-        if (playerRefA.current && typeof playerRefA.current.destroy === 'function') {
-          playerRefA.current.destroy();
-        }
-        if (playerRefB.current && typeof playerRefB.current.destroy === 'function') {
-          playerRefB.current.destroy();
-        }
-      } catch (err) {
-        console.error(err);
-      }
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('timeupdate', handleTimeUpdate);
     };
-  }, [videoId, startTime, endTime]);
+  }, [src, startTime, endTime]);
 
   const togglePlayPause = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    const video = videoRef.current;
+    if (!video) return;
+
     const nextPaused = !isPaused;
     setIsPaused(nextPaused);
-    isPausedRef.current = nextPaused;
 
-    const currentActive = activePlayerRef.current;
-    const activePlayerInstance = currentActive === 'A' ? playerRefA.current : playerRefB.current;
-
-    if (activePlayerInstance && typeof activePlayerInstance.playVideo === 'function') {
-      if (nextPaused) {
-        try {
-          activePlayerInstance.pauseVideo();
-        } catch (e) {
-          console.error(e);
-        }
-      } else {
-        try {
-          activePlayerInstance.playVideo();
-        } catch (e) {
-          console.error(e);
-        }
-      }
+    if (nextPaused) {
+      video.pause();
+    } else {
+      video.play().catch(() => {});
     }
   };
 
   return (
-    <div 
+    <div
       onClick={togglePlayPause}
       className="w-full h-full absolute inset-0 bg-black overflow-hidden rounded-2xl select-none cursor-pointer"
     >
-      <div 
-        className={`absolute w-[124%] h-[140%] -left-[12%] -top-[20%] pointer-events-none scale-[1.01] transition-opacity duration-300 ${
-          activePlayer === 'A' ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
-        <div ref={containerRefA} className="w-full h-full pointer-events-none" />
-      </div>
-
-      <div 
-        className={`absolute w-[124%] h-[140%] -left-[12%] -top-[20%] pointer-events-none scale-[1.01] transition-opacity duration-300 ${
-          activePlayer === 'B' ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
-        <div ref={containerRefB} className="w-full h-full pointer-events-none" />
-      </div>
-
+      <video
+        ref={videoRef}
+        src={src}
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+      />
       <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/35 pointer-events-none z-10" />
     </div>
   );
@@ -370,7 +235,7 @@ export const HoloLensSlide: React.FC = () => {
             
             {activeStep === 0 && (
               <div className="absolute inset-0 bg-zinc-950 rounded-2xl overflow-hidden animate-fade-in z-25">
-                <YouTubeLoopPlayer videoId="HoeKtkAVzyM" startTime={3} endTime={50} />
+                <LoopingVideoPlayer src={hololensVideo} startTime={32} endTime={84} />
               </div>
             )}
 
